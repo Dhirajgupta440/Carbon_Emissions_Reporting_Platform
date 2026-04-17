@@ -147,20 +147,6 @@ Then open:
 - Frontend: `http://localhost:3000`
 - Backend API docs: `http://localhost:8000/docs`
 
-### Option 2: Run Without Docker
-
-Backend:
-
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-Frontend:
-
-Open `frontend/index.html` in a browser, or serve it with any static server.
-
 ## Sample Payloads
 
 ### Create Emission Record
