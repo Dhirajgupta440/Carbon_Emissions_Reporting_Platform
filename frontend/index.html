@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carbon Emissions Reporting Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="page-shell">
+        <section class="hero">
+            <div>
+                <p class="eyebrow">GHG Protocol Aligned Prototype</p>
+                <h1>Carbon Emissions Reporting Platform</h1>
+                <p class="hero-copy">
+                    Track Scope 1 and Scope 2 emissions with historically valid emission factors,
+                    compare yearly performance, and monitor operational intensity in one place.
+                </p>
+            </div>
+            <div class="hero-panel">
+                <div class="hero-stat">
+                    <span>Core Focus</span>
+                    <strong>Scope 1 + 2</strong>
+                </div>
+                <div class="hero-stat">
+                    <span>Calculation Logic</span>
+                    <strong>Activity x Factor</strong>
+                </div>
+                <div class="hero-stat">
+                    <span>Auditability</span>
+                    <strong>Manual Override Log</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel-grid">
+            <article class="panel">
+                <div class="panel-heading">
+                    <h2>Submit Emission Record</h2>
+                    <p>Use a valid activity and date to pull the correct factor version automatically.</p>
+                </div>
+                <form id="emissionForm" class="form-grid">
+                    <label>
+                        Scope
+                        <select id="scope" required></select>
+                    </label>
+                    <label>
+                        Activity
+                        <select id="activity" required></select>
+                    </label>
+                    <label>
+                        Category
+                        <input type="text" id="category" readonly>
+                    </label>
+                    <label>
+                        Unit
+                        <input type="text" id="unit" readonly>
+                    </label>
+                    <label>
+                        Quantity
+                        <input type="number" id="quantity" min="0.01" step="0.01" required>
+                    </label>
+                    <label>
+                        Activity Date
+                        <input type="date" id="activityDate" required>
+                    </label>
+                    <label class="full-width">
+                        Notes
+                        <textarea id="notes" rows="3" placeholder="Optional operational context"></textarea>
+                    </label>
+                    <button type="submit">Record Emission</button>
+                </form>
+            </article>
+
+            <article class="panel">
+                <div class="panel-heading">
+                    <h2>Submit Business Metric</h2>
+                    <p>Business metrics power emission intensity calculations such as kgCO2e per ton of product.</p>
+                </div>
+                <form id="metricForm" class="form-grid">
+                    <label>
+                        Metric Name
+                        <input type="text" id="metricName" value="Tons of Steel Produced" required>
+                    </label>
+                    <label>
+                        Unit
+                        <input type="text" id="metricUnit" value="tons" required>
+                    </label>
+                    <label>
+                        Value
+                        <input type="number" id="metricValue" min="0" step="0.01" required>
+                    </label>
+                    <label>
+                        Metric Date
+                        <input type="date" id="metricDate" required>
+                    </label>
+                    <button type="submit">Save Metric</button>
+                </form>
+            </article>
+        </section>
+
+        <section class="kpi-row">
+            <article class="kpi-card accent">
+                <span>Emission Intensity</span>
+                <strong id="intensityValue">--</strong>
+                <small id="intensityMeta">kgCO2e per unit</small>
+            </article>
+            <article class="kpi-card">
+                <span>Latest YoY Target Year</span>
+                <strong id="yearLabel">--</strong>
+                <small>Current vs previous year scope totals</small>
+            </article>
+            <article class="kpi-card">
+                <span>Audit Entries</span>
+                <strong id="auditCount">0</strong>
+                <small>Manual overrides captured</small>
+            </article>
+        </section>
+
+        <section class="chart-grid">
+            <article class="panel chart-panel wide">
+                <div class="panel-heading">
+                    <h2>Year-over-Year Emissions</h2>
+                    <p>Stacked comparison of Scope 1 and Scope 2 totals.</p>
+                </div>
+                <canvas id="yoyChart"></canvas>
+            </article>
+
+            <article class="panel chart-panel">
+                <div class="panel-heading">
+                    <h2>Emission Hotspots</h2>
+                    <p>Largest contributing activities across reported emissions.</p>
+                </div>
+                <canvas id="hotspotChart"></canvas>
+            </article>
+
+            <article class="panel chart-panel">
+                <div class="panel-heading">
+                    <h2>Monthly Trend</h2>
+                    <p>Total emissions over the selected reporting year.</p>
+                </div>
+                <canvas id="monthlyChart"></canvas>
+            </article>
+        </section>
+
+        <section class="panel-grid lower">
+            <article class="panel">
+                <div class="panel-heading">
+                    <h2>Recent Emission Records</h2>
+                    <p>Shows the factor version used for each record to demonstrate historical accuracy.</p>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Scope</th>
+                                <th>Activity</th>
+                                <th>Qty</th>
+                                <th>Factor</th>
+                                <th>kgCO2e</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsTable"></tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-heading">
+                    <h2>Audit Trail</h2>
+                    <p>Manual overrides are logged with old and new values for compliance transparency.</p>
+                </div>
+                <div id="auditList" class="audit-list"></div>
+            </article>
+        </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+    <script src="script.js"></script>
+</body>
+</html>
