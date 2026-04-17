@@ -85,11 +85,6 @@ function renderYoYChart(data) {
                     data: data.series.map((item) => item.scope_2),
                     backgroundColor: "#ff9152",
                 },
-                {
-                    label: "Scope 3",
-                    data: data.series.map((item) => item.scope_3),
-                    backgroundColor: "#24445c",
-                },
             ],
         },
         options: {

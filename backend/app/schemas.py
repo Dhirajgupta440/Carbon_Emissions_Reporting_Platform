@@ -3,7 +3,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-ScopeName = Literal["Scope 1", "Scope 2", "Scope 3"]
+ScopeName = Literal["Scope 1", "Scope 2"]
 
 class EmissionRecordCreate(BaseModel):
     scope: ScopeName

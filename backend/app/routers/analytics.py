@@ -49,8 +49,8 @@ def get_yoy_emissions(
     )
 
     payload = {
-        previous_year: {"Scope 1": 0.0, "Scope 2": 0.0, "Scope 3": 0.0},
-        year: {"Scope 1": 0.0, "Scope 2": 0.0, "Scope 3": 0.0},
+        previous_year: {"Scope 1": 0.0, "Scope 2": 0.0},
+        year: {"Scope 1": 0.0, "Scope 2": 0.0},
     }
     for row in results:
         payload[int(row.year)][row.scope] = round(row.total_kg_co2e or 0.0, 2)
@@ -60,8 +60,8 @@ def get_yoy_emissions(
         "previous_year": previous_year,
         "unit": "kgCO2e",
         "series": [
-            {"year": previous_year, "scope_1": payload[previous_year]["Scope 1"], "scope_2": payload[previous_year]["Scope 2"], "scope_3": payload[previous_year]["Scope 3"]},
-            {"year": year, "scope_1": payload[year]["Scope 1"], "scope_2": payload[year]["Scope 2"], "scope_3": payload[year]["Scope 3"]},
+            {"year": previous_year, "scope_1": payload[previous_year]["Scope 1"], "scope_2": payload[previous_year]["Scope 2"]},
+            {"year": year, "scope_1": payload[year]["Scope 1"], "scope_2": payload[year]["Scope 2"]},
         ],
     }
 
