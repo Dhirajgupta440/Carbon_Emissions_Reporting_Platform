@@ -136,6 +136,39 @@ def seed_sample_data(db: Session) -> None:
                     valid_from=date(2026, 1, 1),
                     valid_to=None,
                 ),
+                EmissionFactor(
+                    scope="Scope 3",
+                    category="Business Travel",
+                    activity_name="Flights",
+                    activity_unit="km",
+                    co2e_kg_per_unit=0.1500,
+                    factor_source="Sample DEFRA business travel",
+                    version_label="2024-v1",
+                    valid_from=date(2024, 1, 1),
+                    valid_to=date(2024, 12, 31),
+                ),
+                EmissionFactor(
+                    scope="Scope 3",
+                    category="Business Travel",
+                    activity_name="Flights",
+                    activity_unit="km",
+                    co2e_kg_per_unit=0.1450,
+                    factor_source="Sample DEFRA business travel",
+                    version_label="2025-v1",
+                    valid_from=date(2025, 1, 1),
+                    valid_to=date(2025, 12, 31),
+                ),
+                EmissionFactor(
+                    scope="Scope 3",
+                    category="Business Travel",
+                    activity_name="Flights",
+                    activity_unit="km",
+                    co2e_kg_per_unit=0.1400,
+                    factor_source="Sample DEFRA business travel",
+                    version_label="2026-v1",
+                    valid_from=date(2026, 1, 1),
+                    valid_to=None,
+                ),
             ]
         )
         db.commit()
@@ -173,6 +206,9 @@ def seed_sample_data(db: Session) -> None:
             ("Scope 2", "Purchased Electricity", "Grid Electricity", 97000, "kWh", date(2026, 3, 27), "Plant electricity"),
             ("Scope 1", "Mobile Combustion", "Diesel", 13800, "liters", date(2026, 4, 9), "Inbound logistics"),
             ("Scope 2", "Purchased Electricity", "Grid Electricity", 99000, "kWh", date(2026, 4, 21), "Plant electricity"),
+            ("Scope 3", "Business Travel", "Flights", 45000, "km", date(2025, 3, 10), "Q1 Sales trips"),
+            ("Scope 3", "Business Travel", "Flights", 52000, "km", date(2025, 8, 15), "Q3 Conference tour"),
+            ("Scope 3", "Business Travel", "Flights", 48000, "km", date(2026, 2, 20), "Q1 Sales trips"),
         ]
 
         for scope, category, activity_name, quantity, unit, activity_date, notes in sample_records:

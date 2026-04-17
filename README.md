@@ -1,6 +1,6 @@
 # Carbon Emissions Reporting Platform
 
-Prototype GHG reporting platform for organizations that need to capture, analyze, and report Scope 1 and Scope 2 emissions using GHG Protocol style logic.
+Prototype GHG reporting platform for organizations that need to capture, analyze, and report Scope 1, Scope 2, and Scope 3 emissions using GHG Protocol style logic.
 
 ## Overview
 
@@ -41,7 +41,7 @@ flowchart LR
 
 Master data table for factor management.
 
-- `scope`: Scope 1 or Scope 2
+- `scope`: Scope 1, Scope 2, or Scope 3
 - `category`: Mobile Combustion, Stationary Combustion, Purchased Electricity
 - `activity_name`: Diesel, LPG, Grid Electricity
 - `activity_unit`: liters, kg, kWh
@@ -123,9 +123,9 @@ On startup the app seeds:
 
 The frontend includes:
 
-- Emission submission form for Scope 1 and Scope 2 records
+- Emission submission form for Scope 1, Scope 2, and Scope 3 records
 - Business metric submission form
-- Stacked bar chart for year-over-year emissions by Scope 1 and Scope 2
+- Stacked bar chart for year-over-year emissions by Scope 1, Scope 2, and Scope 3
 - Donut chart for emission hotspots by source
 - KPI card for emission intensity
 - Line chart for current-year monthly emissions
@@ -211,6 +211,5 @@ Open `frontend/index.html` in a browser, or serve it with any static server.
 
 ## Notes
 
-- The current implementation intentionally focuses on Scope 1 and Scope 2 as requested.
-- Scope 3 can be added later by extending the master data and analytics grouping logic.
+- The platform now supports Scope 1, Scope 2, and Scope 3 emission reporting.
 - SQLite is used for simplicity in the prototype, but the schema design is compatible with migration to PostgreSQL.
