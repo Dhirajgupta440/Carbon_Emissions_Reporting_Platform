@@ -46,4 +46,8 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "database_file": str(DATABASE_FILE) if DATABASE_FILE else None,
+        "database_exists": DATABASE_FILE.exists() if DATABASE_FILE else False,
+    }
