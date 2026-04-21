@@ -149,17 +149,32 @@ Then open:
 
 ### Option 2: Run Without Docker
 
-Backend:
+Use two terminals from the project root.
+
+Terminal 1 (backend):
 
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Frontend:
+Terminal 2 (frontend static server):
 
-Open `frontend/index.html` in a browser, or serve it with any static server.
+```bash
+cd frontend
+python -m http.server 3000
+```
+
+Then open:
+
+- Frontend: `http://127.0.0.1:3000`
+- Backend API docs: `http://127.0.0.1:8000/docs`
+
+Notes:
+
+- If you open `frontend/index.html` directly (`file://`), the app now defaults to `http://127.0.0.1:8000` for API calls.
+- If port 3000 is busy, run `python -m http.server 5500` and open `http://127.0.0.1:5500`.
 
 ## Sample Payloads
 

@@ -1,8 +1,9 @@
 const host = window.location.hostname;
-const API_BASE =
-    host === "localhost" || host === "127.0.0.1"
-        ? "http://localhost:8000"
-        : `${window.location.protocol}//${host}:8000`;
+const isFileProtocol = window.location.protocol === "file:";
+const isLocalHost = host === "localhost" || host === "127.0.0.1" || host === "";
+const API_BASE = window.__API_BASE__ || (isFileProtocol || isLocalHost
+    ? "http://127.0.0.1:8000"
+    : `${window.location.protocol}//${host}:8000`);
 
 const state = {
     activityOptions: [],

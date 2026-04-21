@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import SessionLocal, create_tables
+from .database import DATABASE_FILE, LEGACY_DATABASE_FILE, SessionLocal, create_tables
 from .routers import analytics, emissions
-from .utils import seed_sample_data
+from .utils import migrate_legacy_sqlite_data, seed_sample_data
 
 
 app = FastAPI(
@@ -27,6 +27,7 @@ def startup_event():
     db = SessionLocal()
     try:
         seed_sample_data(db)
+        migrate_legacy_sqlite_data(db, source_path=LEGACY_DATABASE_FILE, target_path=DATABASE_FILE)
     finally:
         db.close()
 

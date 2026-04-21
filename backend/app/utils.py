@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from datetime import date
+import sqlite3
+from datetime import date, datetime
+from pathlib import Path
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from .models import BusinessMetric, EmissionFactor, EmissionRecord
+from .models import AuditLog, BusinessMetric, EmissionFactor, EmissionRecord
 
 
 def get_valid_emission_factor(
@@ -31,6 +33,255 @@ def get_valid_emission_factor(
 
 def calculate_emission_kg(quantity: float, factor_value: float) -> float:
     return round(quantity * factor_value, 4)
+
+
+def _parse_date(value: str | None) -> date | None:
+    return date.fromisoformat(value) if value else None
+
+
+def _parse_datetime(value: str | None) -> datetime | None:
+    return datetime.fromisoformat(value) if value else None
+
+
+def _factor_key_from_values(
+    scope: str,
+    category: str,
+    activity_name: str,
+    activity_unit: str,
+    co2e_kg_per_unit: float,
+    factor_source: str,
+    version_label: str,
+    valid_from: date,
+    valid_to: date | None,
+) -> tuple:
+    return (
+        scope,
+        category,
+        activity_name,
+        activity_unit,
+        round(float(co2e_kg_per_unit), 4),
+        factor_source,
+        version_label,
+        valid_from.isoformat(),
+        valid_to.isoformat() if valid_to else None,
+    )
+
+
+def _factor_key(factor: EmissionFactor) -> tuple:
+    return _factor_key_from_values(
+        factor.scope,
+        factor.category,
+        factor.activity_name,
+        factor.activity_unit,
+        factor.co2e_kg_per_unit,
+        factor.factor_source,
+        factor.version_label,
+        factor.valid_from,
+        factor.valid_to,
+    )
+
+
+def _metric_key(metric_date: date, metric_name: str, metric_unit: str, value: float) -> tuple:
+    return (metric_date.isoformat(), metric_name, metric_unit, round(float(value), 4))
+
+
+def _record_key(
+    scope: str,
+    category: str,
+    activity_name: str,
+    quantity: float,
+    unit: str,
+    activity_date: date,
+    calculated_kg_co2e: float,
+    final_kg_co2e: float,
+    notes: str | None,
+    override_applied: bool,
+    factor_key: tuple | None,
+) -> tuple:
+    return (
+        scope,
+        category,
+        activity_name,
+        round(float(quantity), 4),
+        unit,
+        activity_date.isoformat(),
+        round(float(calculated_kg_co2e), 4),
+        round(float(final_kg_co2e), 4),
+        (notes or "").strip(),
+        bool(override_applied),
+        factor_key,
+    )
+
+
+def migrate_legacy_sqlite_data(db: Session, source_path: Path | None, target_path: Path | None) -> None:
+    if source_path is None or target_path is None:
+        return
+
+    source_path = Path(source_path).resolve()
+    target_path = Path(target_path).resolve()
+    if not source_path.exists() or source_path == target_path:
+        return
+
+    with sqlite3.connect(source_path) as connection:
+        connection.row_factory = sqlite3.Row
+        factor_rows = connection.execute("SELECT * FROM emission_factors").fetchall()
+        metric_rows = connection.execute("SELECT * FROM business_metrics ORDER BY id ASC").fetchall()
+        record_rows = connection.execute("SELECT * FROM emission_records ORDER BY id ASC").fetchall()
+        audit_rows = connection.execute("SELECT * FROM audit_log ORDER BY id ASC").fetchall()
+
+    factor_ids_by_key = {_factor_key(factor): factor.id for factor in db.query(EmissionFactor).all()}
+
+    legacy_factor_keys: dict[int, tuple | None] = {}
+    for row in factor_rows:
+        valid_from = _parse_date(row["valid_from"])
+        if valid_from is None:
+            continue
+
+        legacy_factor_keys[row["id"]] = _factor_key_from_values(
+            row["scope"],
+            row["category"],
+            row["activity_name"],
+            row["activity_unit"],
+            row["co2e_kg_per_unit"],
+            row["factor_source"],
+            row["version_label"],
+            valid_from,
+            _parse_date(row["valid_to"]),
+        )
+
+    existing_metric_keys = {
+        _metric_key(metric.metric_date, metric.metric_name, metric.metric_unit, metric.value): metric.id
+        for metric in db.query(BusinessMetric).all()
+    }
+    for row in metric_rows:
+        metric_date = _parse_date(row["metric_date"])
+        if metric_date is None:
+            continue
+
+        key = _metric_key(metric_date, row["metric_name"], row["metric_unit"], row["value"])
+        if key in existing_metric_keys:
+            continue
+
+        metric = BusinessMetric(
+            metric_date=metric_date,
+            metric_name=row["metric_name"],
+            metric_unit=row["metric_unit"],
+            value=row["value"],
+            created_at=_parse_datetime(row["created_at"]) or datetime.utcnow(),
+        )
+        db.add(metric)
+        db.flush()
+        existing_metric_keys[key] = metric.id
+
+    existing_record_keys = {}
+    for record in db.query(EmissionRecord).join(EmissionRecord.emission_factor).all():
+        factor_key = _factor_key(record.emission_factor) if record.emission_factor else None
+        key = _record_key(
+            record.scope,
+            record.category,
+            record.activity_name,
+            record.quantity,
+            record.unit,
+            record.activity_date,
+            record.calculated_kg_co2e,
+            record.final_kg_co2e,
+            record.notes,
+            record.override_applied,
+            factor_key,
+        )
+        existing_record_keys[key] = record.id
+
+    legacy_to_current_record_ids: dict[int, int] = {}
+    for row in record_rows:
+        activity_date = _parse_date(row["activity_date"])
+        if activity_date is None:
+            continue
+
+        factor_key = legacy_factor_keys.get(row["emission_factor_id"])
+        current_factor_id = factor_ids_by_key.get(factor_key) if factor_key else None
+        if current_factor_id is None:
+            continue
+
+        key = _record_key(
+            row["scope"],
+            row["category"],
+            row["activity_name"],
+            row["quantity"],
+            row["unit"],
+            activity_date,
+            row["calculated_kg_co2e"],
+            row["final_kg_co2e"],
+            row["notes"],
+            row["override_applied"],
+            factor_key,
+        )
+        if key in existing_record_keys:
+            legacy_to_current_record_ids[row["id"]] = existing_record_keys[key]
+            continue
+
+        record = EmissionRecord(
+            scope=row["scope"],
+            category=row["category"],
+            activity_name=row["activity_name"],
+            quantity=row["quantity"],
+            unit=row["unit"],
+            activity_date=activity_date,
+            calculated_kg_co2e=row["calculated_kg_co2e"],
+            final_kg_co2e=row["final_kg_co2e"],
+            notes=row["notes"],
+            override_applied=bool(row["override_applied"]),
+            created_at=_parse_datetime(row["created_at"]) or datetime.utcnow(),
+            emission_factor_id=current_factor_id,
+        )
+        db.add(record)
+        db.flush()
+        existing_record_keys[key] = record.id
+        legacy_to_current_record_ids[row["id"]] = record.id
+
+    existing_audit_keys = {
+        (
+            audit.emission_record_id,
+            audit.action,
+            audit.field_name,
+            audit.old_value,
+            audit.new_value,
+            audit.reason,
+            audit.created_at.isoformat(),
+        )
+        for audit in db.query(AuditLog).all()
+    }
+    for row in audit_rows:
+        current_record_id = legacy_to_current_record_ids.get(row["emission_record_id"])
+        if current_record_id is None:
+            continue
+
+        created_at = _parse_datetime(row["created_at"]) or datetime.utcnow()
+        key = (
+            current_record_id,
+            row["action"],
+            row["field_name"],
+            row["old_value"],
+            row["new_value"],
+            row["reason"],
+            created_at.isoformat(),
+        )
+        if key in existing_audit_keys:
+            continue
+
+        db.add(
+            AuditLog(
+                emission_record_id=current_record_id,
+                action=row["action"],
+                field_name=row["field_name"],
+                old_value=row["old_value"],
+                new_value=row["new_value"],
+                reason=row["reason"],
+                created_at=created_at,
+            )
+        )
+        existing_audit_keys.add(key)
+
+    db.commit()
 
 
 def seed_sample_data(db: Session) -> None:
