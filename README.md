@@ -215,7 +215,7 @@ Notes:
 ## Verification Performed
 
 - Python syntax compilation across backend and frontend assets
-- Backend smoke test for table creation and seed loading
+- Backend smoke test for table creation and seed loading.
 - API smoke test for:
   - `/health`
   - `/analytics/yoy-emissions`
