@@ -1,6 +1,6 @@
 # Carbon Emissions Reporting Platform
 
-Prototype GHG reporting platform for organizations that need to capture, analyze, and report Scope 1 and Scope 2 emissions using GHG Protocol style logic.
+Prototype GHG reporting platform for organization that need to capture, analyze, and report Scope 1 and Scope 2 emissions using GHG Protocol style logic.
 
 ## Overview
 
